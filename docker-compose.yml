@@ -1,0 +1,108 @@
+version: '3.7'
+
+services:
+
+  app:
+    build:
+      context: docker/php
+      dockerfile: Dockerfile
+    container_name: app_laravel
+    image: rahmat/laravel:mysql-alpine
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  web:
+    image: nginx:alpine
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "1222:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  queue:
+    restart: always
+    depends_on:
+      - redis
+    image: rahmat/laravel:mysql-alpine
+    environment:
+      CONTAINER_ROLE: "queue"
+    volumes:
+      - "./:/var/www/"
+    networks:
+      - app-network
+
+  scheduler:
+    restart: always
+    depends_on:
+      - redis
+    image: jjuanrivvera99/laravel:mysql-alpine
+    environment:
+      CONTAINER_ROLE: "scheduler"
+    volumes:
+      - "./:/var/www/"
+    networks:
+      - app-network
+
+  node:
+    image: rahmat/node:alpine
+    restart: always
+    build:
+      context: docker/node
+      dockerfile: Dockerfile
+    container_name: node
+    volumes:
+      - ./:/var/www
+
+  db:
+        image: mysql:5.7
+
+        restart: always
+        environment:
+          MYSQL_ROOT_PASSWORD: myUserPass
+          MYSQL_DATABASE: mydb
+          MYSQL_USER: myUser
+          MYSQL_PASSWORD: myUser
+
+  phpmyadmin:
+      depends_on:
+        - db
+      image: phpmyadmin/phpmyadmin
+      restart: always
+      ports:
+        - 1223:80
+      environment:
+        PMA_HOST: db
+        MYSQL_ROOT_PASSWORD: myUserPass
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - 1224:1224
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+
+  redis-data:
+    driver: local
