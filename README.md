@@ -8,3 +8,10 @@ Take the following steps:
 - change directory: 'cd laravel-nginx-mysql-docker'
 - run command: 'docker-compose pull'
 - run command: 'docker-compose up -d'
+- 
+Enable auth (Laravel 6+):
+
+- run command: docker-compose exec app composer install laravel/ui
+- run command: docker-compose exec app php artisan ui vue --auth
+- run command: docker-compose exec node npm install
+- run command: docker-compose exec node npm run dev
